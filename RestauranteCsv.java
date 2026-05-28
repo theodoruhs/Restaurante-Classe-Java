@@ -3,7 +3,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-
+//LEMBRAR DE COMENTAR TUDO
 
 public class RestauranteCsv{
 
@@ -106,6 +106,12 @@ static class Data{
   return new Data(anoInt,mesInt,diaInt); 
   }
   
+public int getAno(){
+
+  return this.ano;
+}
+
+
   public String formatar(){
   
   return String.format("%02d/%02d/%04d",  this.dia, this.mes, this.ano);
@@ -439,60 +445,126 @@ public static ColecaoRestaurantes lerCsv() {
 
 }
 
+//================= FILA CIRCULAR COM ALOCACAO SEQUENCIAL =====================
+
+static class Fila {
+    private Restaurante[] array;
+    private int primeiro, ultimo;
+
+    Fila() {
+        // tamanho cinco conforme o enunciado 
+        // usamos array de 6 para a logica de primeiro/ultimo da fila circular
+        this.array = new Restaurante[6]; 
+        this.primeiro = this.ultimo = 0;
+    }
+
+    void inserir(Restaurante rest) {
+        // se a fila estiver cheia, deve fazer uma remocao antes de inserir 
+        if (((ultimo + 1) % array.length) == primeiro) {
+            remover();
+        }
+
+        array[ultimo] = rest;
+        ultimo = (ultimo + 1) % array.length;
+
+        // para cada insercao, mostra (I) e a media arredondada do ano 
+        System.out.println("(I)" + getMediaAnos());
+    }
+
+    Restaurante remover() {
+        // se a fila estiver vazia, nao ha o que remover
+        if (primeiro == ultimo) return null;
+
+        Restaurante resp = array[primeiro];
+        primeiro = (primeiro + 1) % array.length;
+
+        // para cada registro removido, mostra (R) e o nome do restaurante 
+        System.out.println("(R)" + resp.getNome());
+        return resp;
+    }
+
+    int getMediaAnos() {
+        int soma = 0;
+        int cont = 0;
+        // percorre a fila circular do primeiro ao ultimo para calcular a media
+        for (int i = primeiro; i != ultimo; i = (i + 1) % array.length) {
+            soma += array[i].getDataAbertura().getAno();
+            cont++;
+        }
+        // retorna a media arredondada conforme a regra do enunciado 
+        return (cont == 0) ? 0 : (int) Math.round((double) soma / cont);
+    }
+
+    void mostrar() {
+        // no final, mostra os registros presentes na fila do primeiro ao ultimo 
+        for (int i = primeiro; i != ultimo; i = (i + 1) % array.length) {
+            System.out.println(array[i].formatar());
+        }
+    }
+}
+
+//================ Funcoes Auxiliares de Busca e Comparacao ==============================
+
+public static boolean iguais(String s1, String s2) { // funcao substitui equals
+
+    if (s1.length() != s2.length()) return false; //se o tamanho nao for igual e false
+
+    for (int i = 0; i < s1.length(); i++) {//anda pelas duas strings
+        if (s1.charAt(i) != s2.charAt(i)) return false; //compara se o char e igual
+    }
+    return true;
+}
+
+public static int acharIndiceId(ColecaoRestaurantes colecao, int idBuscado) {//funcao para achar indice id no csv
+    Restaurante[] lista = colecao.getRestaurantes();
+    for (int i = 0; i < colecao.getTamanho(); i++) {//vai iterando pela colecao e comparando se o id buscado e igual
+        if (lista[i].getId() == idBuscado) return i;
+    }
+    return -1;
+}
 
 //================ Funcao MAIN ==============================
 
-public static void main(String[] args){
+public static void main(String[] args) {
+    // carrega a colecao do csv obrigatoriamente em /tmp/ 
+    ColecaoRestaurantes colecao = ColecaoRestaurantes.lerCsv();
+    Scanner sc = new Scanner(System.in);
+    Fila fila = new Fila();
 
-  ColecaoRestaurantes colecao = ColecaoRestaurantes.lerCsv();//vou criar uma nova colecao usando o retorno da funcao estatica lerCsv
-
-  Scanner sc = new Scanner(System.in);
-
-  int idBuscado = sc.nextInt();
-  sc.nextLine(); //leio ate o final da linha
-
-
-  while(idBuscado != -1){
-
-    int i = 0; //vai ser o indice do id buscado
-
-    int tam = colecao.getTamanho();//por causa do encapsulamento preciso de get tamanho
-
-    Boolean encontrado = true; 
-
-    for(; i < tam;i++){//vou achar o restaurante cujo id seja igual o id buscado
-
-      Restaurante[] lista = colecao.getRestaurantes();//por causa do encapsulamento preciso fazer isso
-      int id = lista[i].getId(); //preciso acessar o getid por causa do encapsulamento
-      if(id == idBuscado){break;}
-
-      if(i == tam - 1){encontrado = false;}
-    }
-
-    String s = "";
-
-    if(encontrado == true){
-      Restaurante[] lista = colecao.getRestaurantes();
-      s += lista[i].formatar(); //a string s vai ser igual a desse restaurante formatado
-
-    }else{
-      s += "NAO ENCONTRADO"; 
-    }
-
-
-    System.out.println(s);//vou printar o restaurante formatado
-
+    // parte 1: ler os ids e inserir ao final da fila ate encontrar -1 
+    // atencao: nao imprima nada aqui, o metodo inserir() ja faz o (I)
     if (sc.hasNextInt()) {
-        idBuscado = sc.nextInt();
-        if (sc.hasNextLine()) {
-            sc.nextLine(); // Consome o restante da linha apenas se existir
+        int id = sc.nextInt();
+        while (id != -1) {
+            int idx = acharIndiceId(colecao, id);
+            if (idx != -1) {
+                fila.inserir(colecao.getRestaurantes()[idx]);
+            }
+            if (sc.hasNextInt()) id = sc.nextInt();
+            else id = -1;
         }
-    } else {
-        idBuscado = -1; // Força a saída se a entrada acabar inesperadamente
     }
-  
-  }
 
-  sc.close();
-} 
+    // parte 2: ler a quantidade n de operacoes seguintes 
+    if (sc.hasNextInt()) {
+        int n = sc.nextInt();
+        for (int i = 0; i < n; i++) {
+            String op = sc.next();
+            // comando I para inserir (enfileirar) 
+            if (iguais(op, "I")) {
+                int idOperacao = sc.nextInt();
+                int idx = acharIndiceId(colecao, idOperacao);
+                if (idx != -1) fila.inserir(colecao.getRestaurantes()[idx]);
+            } 
+            // comando R para remover (desenfileirar) 
+            else if (iguais(op, "R")) {
+                fila.remover();
+            }
+        }
+    }
+
+    // final: mostra os registros restantes do primeiro ao ultimo 
+    fila.mostrar();
+    sc.close();
+}
 }
