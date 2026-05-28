@@ -3,7 +3,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-
+//LEMBRAR DE COMENTAR TUDO
 
 public class RestauranteCsv{
 
@@ -439,6 +439,125 @@ public static ColecaoRestaurantes lerCsv() {
 
 }
 
+//================= NOVA funcao Lista com Alocacao Sequencial =====================
+
+static class Lista{
+
+  int tam;
+  Restaurante[] array; 
+
+
+  Lista(){ //metodo construtor incializa os atributos
+
+    this.tam = 0;
+    this.array = new Restaurante[200];
+  }
+
+  //============= Metodos Inserir =================
+
+  void inserirInicio(Restaurante rest){
+
+    for(int i = this.tam; i > 0;i--){ //desloco todos os restaurantes um indice a frente exceto o 0
+
+      this.array[i] = this.array[i - 1];
+
+    }
+    this.array[0] = rest; //coloco o novo restaurante no zero
+    this.tam++;
+  }
+
+  void inserirFim(Restaurante rest){
+
+    this.array[this.tam] = rest; //vou inserir o restaurante no indice do array igual ao tamanho atual
+    this.tam++; //incremento o tamanho
+    
+  }
+
+  void inserir(Restaurante rest,int pos){
+
+    for(int i = this.tam; i > pos; i--){ //vou deslocar todas as posicoes antes da insercao para frente
+
+      this.array[i] = this.array[i - 1]; //deslocamento
+    }
+
+    this.array[pos] = rest; //insiro o restaurante no indice da pos
+    this.tam++;
+  }
+
+  //=============== Metodos Remover =================
+
+  Restaurante removerInicio(){
+
+    Restaurante resp = this.array[0]; //pego a resposta
+
+    for(int i = 0; i < this.tam - 1; i++){//desloco todos os restaurantes do arrau uma pos para tras
+
+      this.array[i] = this.array[i + 1]; //deslocamento
+    }
+
+    this.tam--; //diminuo o tamanho do array
+    return resp; 
+  }
+
+  Restaurante removerFim(){
+
+    Restaurante resp = this.array[this.tam - 1]; //o restaurante que vou retirar e no indice do tam do array - 1
+    this.tam--; //ao diminuir o tamanho faco uma remocao logica
+
+    return resp; 
+  }
+
+  Restaurante remover(int pos){
+
+    Restaurante resp = this.array[pos];//guardo o restaurante resp que vai ser removido
+
+    for(int i = pos; i < this.tam - 1; i++){//vou deslocar todos os Restaurantes uma pos tras depois da posicao que removi
+     
+      this.array[i] = this.array[i + 1];//deslocamento para tras
+    }
+    this.tam--;
+
+    return resp; 
+  }
+
+}
+//metodo iguais caso nao possa usar equals
+
+public static boolean iguais(String s1, String s2) {
+    // 1. Se os tamanhos forem diferentes, não tem como serem iguais
+    if (s1.length() != s2.length()) {
+        return false;
+    }
+
+    // 2. Percorre caractere por caractere
+    for (int i = 0; i < s1.length(); i++) {
+        // Se encontrar um único caractere diferente, já retorna false
+        if (s1.charAt(i) != s2.charAt(i)) {
+            return false;
+        }
+    }
+
+    // 3. Se chegou até aqui sem retornar false, as strings são iguais
+    return true;
+}
+
+//======= NOVO - achar indice ID =============
+
+public static int acharIndiceId(ColecaoRestaurantes colecao, int idBuscado){
+
+  int i = 0;
+
+  for(; i < colecao.getTamanho();i++){//vou achar o restaurante cujo id seja igual o id buscado
+
+      Restaurante[] lista = colecao.getRestaurantes();//por causa do encapsulamento preciso fazer isso
+      int id = lista[i].getId(); //preciso acessar o getid por causa do encapsulamento
+      if(id == idBuscado){break;}
+
+
+    }//ate aqui encontrei o ID buscado #######
+
+    return i; 
+}
 
 //================ Funcao MAIN ==============================
 
@@ -451,13 +570,13 @@ public static void main(String[] args){
   int idBuscado = sc.nextInt();
   sc.nextLine(); //leio ate o final da linha
 
+  Lista list = new Lista(); //###### Novo: crio uma nova estrutura de dados do tipo
+
 
   while(idBuscado != -1){
 
     int i = 0; //vai ser o indice do id buscado
-
     int tam = colecao.getTamanho();//por causa do encapsulamento preciso de get tamanho
-
     Boolean encontrado = true; 
 
     for(; i < tam;i++){//vou achar o restaurante cujo id seja igual o id buscado
@@ -467,30 +586,76 @@ public static void main(String[] args){
       if(id == idBuscado){break;}
 
       if(i == tam - 1){encontrado = false;}
-    }
 
-    String s = "";
+    }//ate aqui encontrei o ID buscado #######
+
 
     if(encontrado == true){
-      Restaurante[] lista = colecao.getRestaurantes();
-      s += lista[i].formatar(); //a string s vai ser igual a desse restaurante formatado
 
-    }else{
-      s += "NAO ENCONTRADO"; 
+      list.inserirFim(colecao.getRestaurantes()[i]); //NOVO - vou inserir no fim os restaurantes encontrados
+
     }
 
+    idBuscado = sc.nextInt();
+    sc.nextLine(); 
 
-    System.out.println(s);//vou printar o restaurante formatado
+  }
 
-    if (sc.hasNextInt()) {
-        idBuscado = sc.nextInt();
-        if (sc.hasNextLine()) {
-            sc.nextLine(); // Consome o restante da linha apenas se existir
-        }
-    } else {
-        idBuscado = -1; // Força a saída se a entrada acabar inesperadamente
+  //================== PARTE 2 - realizar as operacoes pedidas =====================
+
+
+  int n = sc.nextInt(); //le o numero de operacoes
+  sc.nextLine(); //le ate o final da linha
+
+  for(int i = 0; i < n; i++){ //vou executar esse loop n vezes para contemplar as operacoes
+
+
+    String op = sc.next(); //leio apenas a primeira string com espaco
+    
+    if(iguais(op, "II")){ //de acordo com a String op, realizo a operacao correspondente
+
+      int idInserir = acharIndiceId(colecao, sc.nextInt()); //vou escanear o proximo id e acha - lo na colecao;
+      list.inserirInicio(colecao.getRestaurantes()[idInserir]); //vou inseri-lo na lista;
+      sc.nextLine();
+
+    }else if(iguais(op, "IF")){
+
+      int idInserir = acharIndiceId(colecao, sc.nextInt()); 
+      list.inserirFim(colecao.getRestaurantes()[idInserir]); 
+      sc.nextLine();
+
+    }else if(iguais(op,"I*")){
+
+      int pos = sc.nextInt(); //aqui diferente das duas o prox int vai ser a posicao 
+      int idInserir = acharIndiceId(colecao, sc.nextInt()); //mas realizo a mesma operacao de achar o indice
+      list.inserir(colecao.getRestaurantes()[idInserir], pos); //e depois inseri - lo
+      sc.nextLine();
+
+    }else if(iguais(op,"RI")){  //Operacoes de Remover
+
+      Restaurante removido = list.removerInicio();//nas operacoes de remover preciso pegar o removido
+      System.out.println("(R)" + removido.getNome()); //e printa - lo
+
+    }else if(iguais(op,"RF")){
+
+      Restaurante removido = list.removerFim();
+      System.out.println("(R)" + removido.getNome());
+
+
+    }else if(iguais(op,"R*")){
+
+      int pos = sc.nextInt();
+      Restaurante removido = list.remover(pos); 
+      System.out.println("(R)" + removido.getNome());
+
     }
-  
+
+  }
+
+  for(int i = 0; i < list.tam; i++){//vou printar o array atual que sobrou
+
+    System.out.println(list.array[i].formatar()); 
+
   }
 
   sc.close();
