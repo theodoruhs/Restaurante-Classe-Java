@@ -1,9 +1,11 @@
 import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
-
+//LEMBRAR DE COMENTAR TUDO
 
 public class RestauranteCsv{
 
@@ -436,63 +438,143 @@ public static ColecaoRestaurantes lerCsv() {
     colecao.lerCsv("/tmp/restaurantes.csv"); // Caminho obrigatório no Linux da PUC 
     return colecao;
 }
+}
+//========================== #### NOVA CLASSE ARVORE BINARIA #### ===============================
+static class No {
+    No esq, dir;
+    Restaurante restaurante;
 
+    No(Restaurante r) {
+        this.esq = null;
+        this.dir = null;
+        this.restaurante = r;
+    }
 }
 
+static class Arvore {
+    No raiz;
+    public static int numComparacoes = 0; // Variavel global para log
 
-//================ Funcao MAIN ==============================
-
-public static void main(String[] args){
-
-  ColecaoRestaurantes colecao = ColecaoRestaurantes.lerCsv();//vou criar uma nova colecao usando o retorno da funcao estatica lerCsv
-
-  Scanner sc = new Scanner(System.in);
-
-  int idBuscado = sc.nextInt();
-  sc.nextLine(); //leio ate o final da linha
-
-
-  while(idBuscado != -1){
-
-    int i = 0; //vai ser o indice do id buscado
-
-    int tam = colecao.getTamanho();//por causa do encapsulamento preciso de get tamanho
-
-    Boolean encontrado = true; 
-
-    for(; i < tam;i++){//vou achar o restaurante cujo id seja igual o id buscado
-
-      Restaurante[] lista = colecao.getRestaurantes();//por causa do encapsulamento preciso fazer isso
-      int id = lista[i].getId(); //preciso acessar o getid por causa do encapsulamento
-      if(id == idBuscado){break;}
-
-      if(i == tam - 1){encontrado = false;}
+    Arvore() {
+        this.raiz = null;
     }
 
-    String s = "";
-
-    if(encontrado == true){
-      Restaurante[] lista = colecao.getRestaurantes();
-      s += lista[i].formatar(); //a string s vai ser igual a desse restaurante formatado
-
-    }else{
-      s += "NAO ENCONTRADO"; 
-    }
-
-
-    System.out.println(s);//vou printar o restaurante formatado
-
-    if (sc.hasNextInt()) {
-        idBuscado = sc.nextInt();
-        if (sc.hasNextLine()) {
-            sc.nextLine(); // Consome o restante da linha apenas se existir
+    //============= metodos inserir =========================
+    public void inserir(Restaurante r) {
+        if (raiz == null) {
+            raiz = new No(r); //se a raiz for nula eu insiro na raiz
+        } else {
+            inserirRec(raiz, r); //caso contrario eu chamo a funcao recursiva
         }
-    } else {
-        idBuscado = -1; // Força a saída se a entrada acabar inesperadamente
     }
-  
-  }
 
-  sc.close();
-} 
+    public No inserirRec(No no, Restaurante r) {
+        if (no == null) { //caso base onde crio um novo No
+            return new No(r); 
+        }
+        int comp = r.nome.compareTo(no.restaurante.nome); //vou comparar a chave nome e inserir de acordo
+
+        if (comp == 0) { //se ja tiver registro nao adiciono
+            return no; 
+        }
+        if (comp > 0) { //se for maior...
+            no.dir = inserirRec(no.dir, r); //o no atual vai ser modificado na direita
+            return no;
+        } else { //caso que a comp < 0
+            no.esq = inserirRec(no.esq, r); //o no atual e modificado na esquerda
+            return no; 
+        }
+    }
+
+    //============= Metodo de pesquisar ===================
+    public void pesquisar(String nome) {
+        System.out.print("raiz ");
+        pesquisarRec(nome, this.raiz);
+    }
+
+    public void pesquisarRec(String nome, No no) {
+        numComparacoes++; // Contador de comparacoes para o log
+        if (no == null) { //se cheguei ate null e nao encontrei, nao tenho o registro
+            System.out.println("NAO"); 
+            return;
+        }
+
+        int comp = nome.compareTo(no.restaurante.nome); //vou comparar o nome atual com o nome do no atual
+
+        if (comp == 0) { //se a comparacao deu 0, o registro existe
+            System.out.println("SIM"); 
+            return; 
+        } else if (comp > 0) { //se deu > 0 tenho que ir para direita
+            System.out.print("dir ");
+            pesquisarRec(nome, no.dir);
+        } else if (comp < 0) { // se deu < 0 tenho que ir para esquerda
+            System.out.print("esq ");
+            pesquisarRec(nome, no.esq);
+        }
+    }
+
+    //================ caminhamento central =============
+    public void caminharCentral() {
+        caminharCentralRec(this.raiz); 
+    }
+
+    private void caminharCentralRec(No no) {
+        if (no != null) {
+            caminharCentralRec(no.esq);
+            System.out.println(no.restaurante.formatar());
+            caminharCentralRec(no.dir);
+        }
+    }
+}
+
+    public static void main(String[] args) {
+        ColecaoRestaurantes colecao = ColecaoRestaurantes.lerCsv();//vou criar uma nova colecao 
+        Scanner sc = new Scanner(System.in);
+
+        int idBuscado = sc.nextInt();
+        sc.nextLine(); //leio ate o final da linha
+
+        Arvore arvore = new Arvore();
+
+        //=========== Primeira Entrada ==================
+        while (idBuscado != -1) {
+            int i = 0; //vai ser o indice do id buscado
+            int tam = colecao.getTamanho();
+            
+            for (; i < tam && colecao.getRestaurantes()[i].getId() != idBuscado; i++);//vou achar o indice do id no csv
+
+            if (i < tam) {
+                Restaurante r = colecao.getRestaurantes()[i]; //pego o restaurante do id
+                arvore.inserir(r);
+            }
+
+            idBuscado = sc.nextInt();
+            sc.nextLine();
+        }//ate aqui fiz todas as insercoes na arvore
+
+        //================= Segunda Entrada =======================
+        long tempoInicio = System.nanoTime(); // Medicao de tempo total das pesquisas
+
+        String entrada = sc.nextLine(); 
+        while (entrada.compareTo("FIM") != 0) {
+            arvore.pesquisar(entrada); //chamo a funcao para pesquisar a entrada e printo o resultado 
+            entrada = sc.nextLine(); 
+        }
+
+        long tempoFim = System.nanoTime();
+        double tempoTotal = (tempoFim - tempoInicio) / 1_000_000_000.0;
+
+        //=============== Print final dos restaurantes ================
+        arvore.caminharCentral();
+
+        //=============== Geracao do arquivo de log ================
+        try {
+            PrintWriter writer = new PrintWriter(new FileWriter("1066294_arvore_binaria.txt")); 
+            writer.printf("1066294\t%d\t%.8f", Arvore.numComparacoes, tempoTotal); // Separado por tabulacao
+            writer.close();
+        } catch (IOException e) { e.printStackTrace(); }
+
+        sc.close();
+    }
+
 }
