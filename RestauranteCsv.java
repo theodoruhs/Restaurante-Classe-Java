@@ -3,7 +3,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-
+//LEMBRAR DE COMENTAR TUDO
 
 public class RestauranteCsv{
 
@@ -439,10 +439,187 @@ public static ColecaoRestaurantes lerCsv() {
 
 }
 
+//======================= NOVA CLASSE CELULA DUPLA ===================
+
+static class Celula{//nova classe celula
+
+ Celula prox;
+ Celula ant;
+ Restaurante restaurante; 
+
+ Celula(){
+
+  this.prox = this.ant = null;
+  this.restaurante = null;
+ }
+
+ Celula(Restaurante r){
+
+  this.prox = this.ant = null;
+  this.restaurante = r;
+ }
+ 
+}
+//==================== LISTA DUPLA ===================================
+
+static class ListaDupla{
+
+  Celula primeiro;
+  Celula ultimo;
+  
+
+  ListaDupla(){
+
+    this.primeiro = this.ultimo = new Celula();
+  }
+
+  //================ metodos inserir
+
+  void inserirInicio(Restaurante r){
+
+    Celula nova = new Celula(r); //crio nova celula
+
+    nova.prox = primeiro.prox; //faco nova apontar para a proxima do primeiro
+    nova.ant = primeiro;    // faco a nova ant apontar para primeiro
+
+    primeiro.prox = nova;  //primeiro aponta para nova
+
+    if(nova.prox != null){ //faco a celula da frente apontar de volta para nova
+
+      nova.prox.ant = nova; 
+    }
+
+    if(primeiro == ultimo){//atualizo o ultimo se primeiro for igual a ultimo
+
+      ultimo = nova; 
+    }
+
+  }
+
+  void inserirFim(Restaurante r){
+
+    Celula nova = new Celula(r);
+
+    nova.ant = ultimo; //faco a nova apontar para o ultimo
+    nova.prox = null;
+
+    ultimo.prox = nova; //e ultimo apontar para nova
+
+    ultimo = ultimo.prox; //desloco o ultimo para nova
+
+
+  }
+
+  void inserir(Restaurante r, int pos){
+
+    Celula nova = new Celula(r);
+
+    Celula i = this.primeiro; 
+
+    for(int j = 0; j < pos && i != null; j++, i = i.prox); //vou andar na celula dupla ate a posicao anterior a de insercao
+
+    if(i.prox == null){inserirFim(r);} //vou checar se estou na ultima ou na primeira celula antes
+    if(i.ant == primeiro){inserirInicio(r);}
+
+    nova.prox = i.prox; //nova prox vai apontar para i prox
+    nova.ant = i; //nova ant vai ser i
+
+    i.prox = nova; //i prox vai ser nova
+    nova.prox.ant = nova; //atualizo o ant da nova prox para ser nova, observar que ja lidei com o caso de IF
+
+  }
+
+  //================= metodos remover
+
+  Restaurante removerFim(){
+
+    if(primeiro == ultimo){System.out.println("lista vazia");  return null;}
+
+    Restaurante resp = ultimo.restaurante; //guardo o restaurante da resposta
+
+    Celula tmp = ultimo.ant; //guardo a posicao do anterior ao ultimo
+
+    ultimo.ant = null; //retiro a seta para o penultimo
+    tmp.prox = null;  //retiro a seta do penultimo para ultimo
+
+    ultimo = tmp; //volto uma pos atras com o ultimo
+    tmp = null;
+
+    return resp; 
+  }
+
+  Restaurante removerInicio(){
+
+    if(primeiro == ultimo){System.out.println("lista vazia");  return null;}
+
+    Restaurante resp = primeiro.prox.restaurante; //vou guardar a resp
+
+    Celula tmp = primeiro.prox; //vou criar um ponteiro pra celula que vou retirar
+
+    primeiro.prox = primeiro.prox.prox;//vou fazer o primeiro "pular" a posicao que vou retirar
+
+    if(tmp != ultimo){ //se a posicao retirada nao for a ultima
+     tmp.prox.ant = primeiro; //a anterior da proxima a celula retirada aponta para primeiro
+
+    }
+
+    tmp.ant = null; //limpo as referencias da celula retirada
+    tmp.prox = null;
+
+    return resp;
+  }
+
+  Restaurante remover(int pos){
+
+    Celula i = primeiro;
+
+    for(int j = 0; j < pos && i != null; j++, i = i.prox);  //vou andar ate a celula anterior que vou retirar
+
+    if(i == primeiro){return removerInicio();} //verifico se estou tentando remover a primeira ou ultima pos e redireciono
+    if(i.prox == ultimo){return removerFim();}
+
+    Celula tmp = i.prox; //tmp vai apontar para onde eu vou remover
+    Restaurante resp = i.prox.restaurante; //guardo o conteudo do retorno
+
+    i.prox = i.prox.prox; //i prox vai pular a celula que vou remover
+    tmp.prox.ant = i; //o anterior a celula que eu vou remover vai pular tmp
+
+    tmp.prox = null;
+    tmp.ant = null;
+
+    return resp;  
+  }
+}
+
+//================================= FIM DA LISTA DUPLA ===================
+
+public static Restaurante acharIdRestaurante(ColecaoRestaurantes colecao, int id){
+
+  int i = 0;
+  for(; i < colecao.tamanho && colecao.getRestaurantes()[i].id != id; i++); //vou andar com o i enquanto ele nao e igual ao id
+
+  return colecao.getRestaurantes()[i]; //vou retornar o restaurante correspondente
+
+}
+
+
+//Nova funcao que substitui equals =====
+
+public static boolean igual(String a, String b){
+
+  if(a.length() != b.length()){return false;} //se sao iguais tem que ter tamanhos iguais
+
+  for(int i = 0; i < a.length();i++){ //vou iterar pelas duas strings
+
+    if(a.charAt(i) != b.charAt(i)){return false;} //se em algum momento eu tiver um caractere nas duas que nao e igual retorno falso
+
+  }
+  return true;
+}
 
 //================ Funcao MAIN ==============================
 
-public static void main(String[] args){
+public static void main(String[] args) throws Exception{
 
   ColecaoRestaurantes colecao = ColecaoRestaurantes.lerCsv();//vou criar uma nova colecao usando o retorno da funcao estatica lerCsv
 
@@ -451,46 +628,83 @@ public static void main(String[] args){
   int idBuscado = sc.nextInt();
   sc.nextLine(); //leio ate o final da linha
 
-
-  while(idBuscado != -1){
-
-    int i = 0; //vai ser o indice do id buscado
-
-    int tam = colecao.getTamanho();//por causa do encapsulamento preciso de get tamanho
-
-    Boolean encontrado = true; 
-
-    for(; i < tam;i++){//vou achar o restaurante cujo id seja igual o id buscado
-
-      Restaurante[] lista = colecao.getRestaurantes();//por causa do encapsulamento preciso fazer isso
-      int id = lista[i].getId(); //preciso acessar o getid por causa do encapsulamento
-      if(id == idBuscado){break;}
-
-      if(i == tam - 1){encontrado = false;}
-    }
-
-    String s = "";
-
-    if(encontrado == true){
-      Restaurante[] lista = colecao.getRestaurantes();
-      s += lista[i].formatar(); //a string s vai ser igual a desse restaurante formatado
-
-    }else{
-      s += "NAO ENCONTRADO"; 
-    }
+  ListaDupla lista = new ListaDupla();
 
 
-    System.out.println(s);//vou printar o restaurante formatado
+  //========= Primeira Entrada =====================
 
-    if (sc.hasNextInt()) {
-        idBuscado = sc.nextInt();
-        if (sc.hasNextLine()) {
-            sc.nextLine(); // Consome o restante da linha apenas se existir
-        }
-    } else {
-        idBuscado = -1; // Força a saída se a entrada acabar inesperadamente
-    }
+  while(idBuscado != -1){ //enquanto nao tiver condicao de parada
+
+    
+    lista.inserirFim(acharIdRestaurante(colecao,idBuscado));//insiro no fim o restaurante com o id buscado
   
+    idBuscado = sc.nextInt();
+    sc.nextLine(); //leio ate o final da linha
+  }
+
+  //======== Segunda Entrada =======================
+
+  int n = sc.nextInt();
+
+  for(int i = 0; i < n; i++){
+
+    if (!sc.hasNext()) break; //### protecao contra fim do arquivo inesperado
+
+    String s = sc.next(); //s vai ser o comando
+
+    if(igual(s,"II")){
+
+      Restaurante r = acharIdRestaurante(colecao,sc.nextInt()); //leio a proxima linha e obtenho o restaurante
+      lista.inserirInicio(r); //insiro ele de acordo com o comando
+    
+
+    }else if(igual(s,"IF")){
+
+      Restaurante r = acharIdRestaurante(colecao,sc.nextInt()); //leio a proxima linha e obtenho o restaurante
+      lista.inserirFim(r); 
+
+
+    }else if(igual(s,"I*")){
+
+      int pos = sc.nextInt(); 
+      Restaurante r = acharIdRestaurante(colecao,sc.nextInt()); 
+      lista.inserir(r,pos); 
+
+ 
+
+    }else if(igual(s,"RI")){ //no caso dos comandos de remover
+
+      Restaurante resp = lista.removerInicio(); //eu retorno a posicao que removi na funcao remover inicio
+      System.out.println("(R)" + resp.getNome());// e printo ela no resultado
+
+  
+
+    }else if(igual(s,"RF")){
+
+      Restaurante resp = lista.removerFim(); 
+      System.out.println("(R)" + resp.getNome());
+
+
+
+    }else if(igual(s,"R*")){
+
+      int pos = sc.nextInt();
+      Restaurante resp = lista.remover(pos); 
+      System.out.println("(R)" + resp.getNome());
+
+
+    }
+
+  }
+
+  //========= Agora Imprimo todos os restaurantes da lista dupla ===========
+
+
+  for(Celula indice = lista.primeiro.prox; indice != null; indice = indice.prox){ //loop vai mostrar os restaurantes a partir do primeiro
+
+    System.out.println(indice.restaurante.formatar()); 
+
+
   }
 
   sc.close();
